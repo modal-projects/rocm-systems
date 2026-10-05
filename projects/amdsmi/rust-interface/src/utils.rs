@@ -131,10 +131,12 @@ macro_rules! impl_cstr_getters {
 impl fmt::Display for AmdsmiStatusT {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let status_str = crate::amdsmi_status_code_to_string(*self)
-            .unwrap_or("An unknown error occurred".to_string());
+            .unwrap_or_else(|_| format!("{self:?}"));
         write!(f, "{}", status_str)
     }
 }
+
+impl std::error::Error for AmdsmiStatusT {}
 
 impl fmt::Display for AmdsmiBdfT {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
