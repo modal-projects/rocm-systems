@@ -6124,12 +6124,16 @@ pub fn amdsmi_get_gpu_process_list(
         std::ptr::null_mut()
     ));
 
-    let mut processes: Vec<AmdsmiProcInfoT> = Vec::with_capacity(num_processes as usize);
+    let capacity = num_processes;
+    let mut processes: Vec<AmdsmiProcInfoT> = Vec::with_capacity(capacity as usize);
     call_unsafe!(amdsmi_wrapper::amdsmi_get_gpu_process_list(
         processor_handle,
         &mut num_processes,
         processes.as_mut_ptr()
     ));
+    if num_processes > capacity {
+        return Err(AmdsmiStatusT::AmdsmiStatusOutOfResources);
+    }
     unsafe { processes.set_len(num_processes as usize) };
 
     Ok(processes)
