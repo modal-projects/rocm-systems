@@ -22,11 +22,13 @@
 
 #include "amd_smi/impl/amd_smi_common.h"
 
+#include <atomic>
+
 #include "amd_smi/amdsmi.h"
 
 namespace {
 
-auto g_amdsmi_init_ref_count = int32_t(0);
+std::atomic<int32_t> g_amdsmi_init_ref_count{0};
 
 }  // namespace
 

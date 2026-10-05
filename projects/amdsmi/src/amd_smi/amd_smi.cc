@@ -42,6 +42,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <queue>
 #include <set>
 #include <sstream>
@@ -74,6 +75,10 @@
 #include "rocm_smi/rocm_smi_kfd.h"
 #include "rocm_smi/rocm_smi_logger.h"
 #include "rocm_smi/rocm_smi_utils.h"
+
+namespace {
+std::mutex amdsmi_lifecycle_mutex;
+}  // namespace
 
 // a global instance of std::mutex to protect data passed during threads
 std::mutex myMutex;
@@ -293,6 +298,7 @@ amdsmi_status_t rsmi_switch_wrapper(F&& f, amdsmi_processor_handle processor_han
 #endif  // BRCM_NIC
 
 amdsmi_status_t amdsmi_init(uint64_t flags) {
+  std::lock_guard<std::mutex> guard(amdsmi_lifecycle_mutex);
   if (amd::smi::amdsmi_library_initialized()) {
     amd::smi::amdsmi_library_init_ref_acquire();
     return AMDSMI_STATUS_SUCCESS;
@@ -305,6 +311,7 @@ amdsmi_status_t amdsmi_init(uint64_t flags) {
 }
 
 amdsmi_status_t amdsmi_shut_down() {
+  std::lock_guard<std::mutex> guard(amdsmi_lifecycle_mutex);
   if (!amd::smi::amdsmi_library_init_ref_release()) {
     return AMDSMI_STATUS_SUCCESS;
   }
