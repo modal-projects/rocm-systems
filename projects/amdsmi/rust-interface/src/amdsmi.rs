@@ -18,7 +18,11 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+// Unit tests can provide mock C symbols in the test executable.
+#[cfg(any(not(feature = "dynamic-loading"), test))]
 use crate::amdsmi_wrapper;
+#[cfg(all(feature = "dynamic-loading", not(test)))]
+use crate::runtime as amdsmi_wrapper;
 use crate::utils::*;
 use libc::free;
 use std::mem::MaybeUninit;
@@ -3656,7 +3660,7 @@ pub fn amdsmi_get_gpu_ecc_count(
     processor_handle: AmdsmiProcessorHandle,
     block: AmdsmiGpuBlockT,
 ) -> AmdsmiResult<AmdsmiErrorCountT> {
-    let mut ec = MaybeUninit::<AmdsmiErrorCountT>::uninit();
+    let mut ec = MaybeUninit::<AmdsmiErrorCountT>::zeroed();
     call_unsafe!(amdsmi_wrapper::amdsmi_get_gpu_ecc_count(
         processor_handle,
         block,
@@ -5205,6 +5209,42 @@ pub fn amdsmi_get_gpu_device_bdf(
     Ok(bdf)
 }
 
+/// Retrieves the DRM, HSA, HIP, and physical enumeration information for a GPU.
+///
+/// The returned [`AmdsmiEnumerationInfoT`] includes the DRM render node, HIP
+/// UUID, and enumeration IDs. The HIP UUID is distinct from the device UUID
+/// returned by [`amdsmi_get_gpu_device_uuid`].
+///
+/// # Arguments
+///
+/// * `processor_handle` - A processor handle obtained after initializing AMD SMI.
+///
+/// # Example
+///
+/// ```no_run
+/// # use amdsmi::*;
+/// # fn example(processor_handle: AmdsmiProcessorHandle) -> AmdsmiResult<()> {
+/// let info = amdsmi_get_gpu_enumeration_info(processor_handle)?;
+/// println!("DRM render node: renderD{}", info.drm_render);
+/// println!("HSA ID: {}, HIP ID: {}", info.hsa_id, info.hip_id);
+/// # Ok(())
+/// # }
+/// ```
+///
+/// # Errors
+///
+/// Returns the underlying [`AmdsmiStatusT`] if the query fails.
+pub fn amdsmi_get_gpu_enumeration_info(
+    processor_handle: AmdsmiProcessorHandle,
+) -> AmdsmiResult<AmdsmiEnumerationInfoT> {
+    let mut info = MaybeUninit::<AmdsmiEnumerationInfoT>::zeroed();
+    call_unsafe!(amdsmi_wrapper::amdsmi_get_gpu_enumeration_info(
+        processor_handle,
+        info.as_mut_ptr()
+    ));
+    Ok(unsafe { info.assume_init() })
+}
+
 /// Get the UUID of the GPU device with the specified processor handle.
 ///
 /// Given a processor handle `processor_handle`, this function retrieves the UUID of the specified GPU device.
@@ -5762,7 +5802,7 @@ pub fn amdsmi_get_gpu_vbios_info(
 pub fn amdsmi_get_gpu_activity(
     processor_handle: AmdsmiProcessorHandle,
 ) -> AmdsmiResult<AmdsmiEngineUsageT> {
-    let mut info = MaybeUninit::<AmdsmiEngineUsageT>::uninit();
+    let mut info = MaybeUninit::<AmdsmiEngineUsageT>::zeroed();
     call_unsafe!(amdsmi_wrapper::amdsmi_get_gpu_activity(
         processor_handle,
         info.as_mut_ptr()
@@ -5813,7 +5853,7 @@ pub fn amdsmi_get_gpu_activity(
 pub fn amdsmi_get_power_info(
     processor_handle: AmdsmiProcessorHandle,
 ) -> AmdsmiResult<AmdsmiPowerInfoT> {
-    let mut info = MaybeUninit::<AmdsmiPowerInfoT>::uninit();
+    let mut info = MaybeUninit::<AmdsmiPowerInfoT>::zeroed();
     call_unsafe!(amdsmi_wrapper::amdsmi_get_power_info(
         processor_handle,
         info.as_mut_ptr()
@@ -5919,7 +5959,7 @@ pub fn amdsmi_get_clock_info(
     processor_handle: AmdsmiProcessorHandle,
     clk_type: AmdsmiClkTypeT,
 ) -> AmdsmiResult<AmdsmiClkInfoT> {
-    let mut info = MaybeUninit::<AmdsmiClkInfoT>::uninit();
+    let mut info = MaybeUninit::<AmdsmiClkInfoT>::zeroed();
     call_unsafe!(amdsmi_wrapper::amdsmi_get_clock_info(
         processor_handle,
         clk_type,
@@ -6022,7 +6062,7 @@ pub fn amdsmi_get_gpu_vram_usage(
 pub fn amdsmi_get_gpu_total_ecc_count(
     processor_handle: AmdsmiProcessorHandle,
 ) -> AmdsmiResult<AmdsmiErrorCountT> {
-    let mut ec = MaybeUninit::<AmdsmiErrorCountT>::uninit();
+    let mut ec = MaybeUninit::<AmdsmiErrorCountT>::zeroed();
     call_unsafe!(amdsmi_wrapper::amdsmi_get_gpu_total_ecc_count(
         processor_handle,
         ec.as_mut_ptr()

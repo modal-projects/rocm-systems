@@ -2,6 +2,21 @@
 
 This rust crate provides Rust bindings for the AMD System Management Interface (AMD-SMI) library. It allows you to interact with AMD GPUs and retrieve various information using Rust.
 
+## AMD SMI 26.5 compatibility branch
+
+This branch targets AMD SMI **26.5.0**, based on upstream commit
+`2b22ab0195cc1461cd9abf3b969e9dd7c10af350`. It retains that revision's C header
+and generated Rust bindings and backports these Rust-wrapper changes:
+
+- [Output initialization fixes](https://github.com/ROCm/rocm-systems/pull/12766).
+- [GPU enumeration wrapper](https://github.com/ROCm/rocm-systems/pull/12767).
+- [Optional runtime loading](https://github.com/ROCm/rocm-systems/pull/12768).
+
+Runtime loading uses `libamd_smi.so.26` to avoid selecting the incompatible
+27.x ABI. This branch does not upgrade the native library. Pin the fork's commit
+when consuming it as a Cargo git dependency, and enable `dynamic-loading` for
+applications that must build and start without an AMD SMI installation.
+
 ## Table of Contents
 
 - [Overview](#overview)
@@ -141,6 +156,37 @@ cd rust-interface
 cargo build
 ```
 
+### Optional runtime loading
+
+Enable `dynamic-loading` to build and start applications without AMD SMI installed:
+
+```sh
+cargo build --features dynamic-loading
+```
+
+The existing Rust API is unchanged. The first API call loads `libamd_smi.so.26` using
+the system dynamic loader's search path. To choose an installation explicitly,
+set `AMDSMI_LIB_DIR` to its library directory **at runtime**, before making any
+AMD SMI calls. Use a trusted installation compatible with the generated bindings;
+runtime loading does not make different AMD SMI ABI versions interchangeable.
+
+An unavailable library returns `AmdsmiStatusFailLoadModule`. An unavailable symbol
+returns `AmdsmiStatusFailLoadSymbol` only when that function is called, so unused
+optional APIs do not prevent initialization. Loading and symbol resolution results
+are cached for the process lifetime, including failures. The shared library stays
+loaded after `amdsmi_shut_down()`, allowing later initialization without dangling
+function pointers. Callers remain responsible for the C API's initialization,
+handle lifetimes, and thread-safety requirements.
+
+Without this feature, the existing build-time library lookup and link-time
+dependency are preserved. Neither mode regenerates bindings on ordinary builds.
+
+GPU-free loader tests require a C compiler, but no AMD SMI installation:
+
+```sh
+cargo test --features dynamic-loading --test runtime_loading
+```
+
 
 ### Regenerating FFI Bindings
 
@@ -262,4 +308,3 @@ pub fn amdsmi_get_gpu_id(processor_handle: AmdsmiProcessorHandle) -> AmdsmiResul
     Ok(id)
 }
 ```
-
