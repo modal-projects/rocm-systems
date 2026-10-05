@@ -198,13 +198,10 @@ static const std::chrono::milliseconds kComputeProcessCacheDuration =
 int32_t AMDSmiGPUDevice::get_compute_process_list_impl(
     GPUComputeProcessList_t& compute_process_list, ComputeProcessListType_t list_type) {
   ComputeProcessCache* cache_ptr = nullptr;
-  {
-    std::lock_guard<std::mutex> lock(compute_process_list_mutex);
-    if (compute_process_cache_map.find(gpu_id_) == compute_process_cache_map.end()) {
-      compute_process_cache_map[gpu_id_] = new ComputeProcessCache();
-    }
-    cache_ptr = compute_process_cache_map[gpu_id_];
+  if (compute_process_cache_map.find(gpu_id_) == compute_process_cache_map.end()) {
+    compute_process_cache_map[gpu_id_] = new ComputeProcessCache();
   }
+  cache_ptr = compute_process_cache_map[gpu_id_];
 
   /**
    *  The first call to rsmi_compute_process_info_get() to find the number of
@@ -441,8 +438,10 @@ int32_t AMDSmiGPUDevice::get_compute_process_list_impl(
   return status_code;
 }
 
-const GPUComputeProcessList_t& AMDSmiGPUDevice::amdgpu_get_compute_process_list(
+GPUComputeProcessList_t AMDSmiGPUDevice::amdgpu_get_compute_process_list(
     ComputeProcessListType_t list_type) {
+  // The process-info cache is shared across GPUs; hold its lock through the snapshot copy.
+  std::lock_guard<std::mutex> lock(compute_process_list_mutex);
   auto error_code = get_compute_process_list_impl(compute_process_list_, list_type);
   if (error_code) {
     compute_process_list_.clear();
