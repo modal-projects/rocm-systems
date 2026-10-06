@@ -177,9 +177,6 @@ class AMDSmiGPUDevice : public AMDSmiProcessor {
   FabricBDFList_t fabric_bdf_list_;
   uint32_t vendor_id_;
   AMDSmiDrm& drm_;
-  uint32_t card_index_;
-  uint32_t drm_render_minor_;
-  uint64_t kfd_gpu_id_;  // Used to decode vram usage for KFD processes
   GPUComputeProcessList_t compute_process_list_;
   std::string gpu_uuid_;  // Device UUID for UALoE identification
   int32_t get_compute_process_list_impl(GPUComputeProcessList_t& compute_process_list,

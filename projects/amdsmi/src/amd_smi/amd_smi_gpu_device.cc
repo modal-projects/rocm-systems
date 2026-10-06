@@ -105,12 +105,10 @@ uint32_t AMDSmiGPUDevice::get_card_id() {
   rsmi_device_identifiers_t identifiers = rsmi_device_identifiers_t{};
   ret = rsmi_dev_device_identifiers_get(gpu_index, &identifiers);
   if (ret != rsmi_status_t::RSMI_STATUS_SUCCESS) {
-    this->card_index_ = std::numeric_limits<uint32_t>::max();
-  } else {
-    this->card_index_ = identifiers.card_index;
+    return std::numeric_limits<uint32_t>::max();
   }
 
-  return this->card_index_;
+  return identifiers.card_index;
 }
 
 uint32_t AMDSmiGPUDevice::get_drm_render_minor() {
@@ -120,12 +118,10 @@ uint32_t AMDSmiGPUDevice::get_drm_render_minor() {
   rsmi_device_identifiers_t identifiers = rsmi_device_identifiers_t{};
   ret = rsmi_dev_device_identifiers_get(gpu_index, &identifiers);
   if (ret != rsmi_status_t::RSMI_STATUS_SUCCESS) {
-    this->drm_render_minor_ = std::numeric_limits<uint32_t>::max();
-  } else {
-    this->drm_render_minor_ = identifiers.drm_render_minor;
+    return std::numeric_limits<uint32_t>::max();
   }
 
-  return this->drm_render_minor_;
+  return identifiers.drm_render_minor;
 }
 
 uint64_t AMDSmiGPUDevice::get_kfd_gpu_id() {
@@ -135,12 +131,10 @@ uint64_t AMDSmiGPUDevice::get_kfd_gpu_id() {
   rsmi_device_identifiers_t identifiers = rsmi_device_identifiers_t{};
   ret = rsmi_dev_device_identifiers_get(gpu_index, &identifiers);
   if (ret != rsmi_status_t::RSMI_STATUS_SUCCESS) {
-    this->kfd_gpu_id_ = std::numeric_limits<uint64_t>::max();
-  } else {
-    this->kfd_gpu_id_ = identifiers.kfd_gpu_id;
+    return std::numeric_limits<uint64_t>::max();
   }
 
-  return this->kfd_gpu_id_;
+  return identifiers.kfd_gpu_id;
 }
 
 std::string& AMDSmiGPUDevice::get_gpu_path() { return path_; }
